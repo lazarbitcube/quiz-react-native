@@ -19,9 +19,14 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <Stack>
-        <Stack.Screen name="index" options={{ headerTitle: "Quiz API" }} />
-        <Stack.Screen name="quiz" options={{ headerTitle: "Quiz selector" }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="index"
+          options={{ headerTitle: "Lazar's Quiz", headerBackVisible: false }}
+        />
+        <Stack.Screen
+          name="quizzes/quiz"
+          options={{ headerTitle: "Quiz selector" }}
+        />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

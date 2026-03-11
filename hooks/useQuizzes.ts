@@ -2,7 +2,7 @@ import { fetchQuizzes } from "@/api/quizApi";
 import { QuizResponse } from "@/types/types";
 import { useEffect, useState } from "react";
 
-export function useQuizzes() {
+export function useQuizzes(numberOfQuizes: number) {
   const [quizzes, setQuizzes] = useState<QuizResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -10,7 +10,8 @@ export function useQuizzes() {
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await fetchQuizzes();
+        setLoading(true);
+        const data = await fetchQuizzes(numberOfQuizes);
         setQuizzes(data);
       } catch (err: any) {
         setError(err.message);
@@ -18,10 +19,9 @@ export function useQuizzes() {
         setLoading(false);
       }
     };
-    setTimeout(() => {
-      load();
-    }, 2000);
-  }, []);
+
+    load();
+  }, [numberOfQuizes]);
 
   return { quizzes, loading, error };
 }
