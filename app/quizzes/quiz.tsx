@@ -14,7 +14,8 @@ import {
 } from "react-native";
 
 export default function QuizPage() {
-  const [numberOfQuizes, setNumberOfQuizes] = useState(5);
+  const [numberOfQuizes, setNumberOfQuizes] = useState(10);
+  const [showLoadMore, setShowLoadMore] = useState(true);
   const { quizzes, loading, error } = useQuizzes(numberOfQuizes);
 
   const handleRedirect = (quiz: QuizData) => {
@@ -31,7 +32,9 @@ export default function QuizPage() {
   };
 
   const loadMore = () => {
-    setNumberOfQuizes((prev) => prev + 5);
+    if (!quizzes?.data) return;
+    setNumberOfQuizes((prev) => prev + 10);
+    if (quizzes?.data.length % numberOfQuizes !== 0) setShowLoadMore(false);
   };
 
   if (loading)
@@ -61,7 +64,11 @@ export default function QuizPage() {
       />
       <ThemedView style={styles.container}>
         <Text style={styles.header}>Select a quiz</Text>
-        <ScrollView style={styles.quizContainer}>
+        <ScrollView
+          style={{ width: "100%" }}
+          contentContainerStyle={styles.quizContainer}
+          showsVerticalScrollIndicator={false}
+        >
           {quizzes?.data.map((quiz) => (
             <Pressable onPress={() => handleRedirect(quiz)} key={quiz.id}>
               <ThemedView style={styles.quiz}>
@@ -70,11 +77,13 @@ export default function QuizPage() {
             </Pressable>
           ))}
         </ScrollView>
-        <Pressable onPress={loadMore}>
-          <ThemedView style={styles.loadMoreButton}>
-            <ThemedText>Load more</ThemedText>
-          </ThemedView>
-        </Pressable>
+        {showLoadMore && (
+          <Pressable onPress={loadMore}>
+            <ThemedView style={styles.loadMoreButton}>
+              <ThemedText>Load more</ThemedText>
+            </ThemedView>
+          </Pressable>
+        )}
       </ThemedView>
     </>
   );
@@ -96,6 +105,7 @@ const styles = StyleSheet.create({
   quiz: {
     padding: 10,
     marginVertical: 5,
+    backgroundColor: "#f0f0f0",
     borderRadius: 10,
     shadowColor: "black",
     shadowOffset: { width: 0, height: 4 },
