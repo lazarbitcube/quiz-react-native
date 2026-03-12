@@ -1,4 +1,8 @@
-export async function fetchQuizzes(numberOfQuizes: number) {
+import { QuizResponse } from "@/types/types";
+
+export async function fetchQuizzes(
+  numberOfQuizes: number,
+): Promise<QuizResponse> {
   const response = await fetch(
     `https://quizapi.io/api/v1/quizzes?limit=${numberOfQuizes}`,
     {

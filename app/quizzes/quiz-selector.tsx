@@ -1,8 +1,9 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { useQuizzes } from "@/hooks/useQuizzes";
+import { createQuizQueryOptions } from "@/queryOptions/createQuizQueryOptions";
 import { QuizData } from "@/types/types";
+import { useQuery } from "@tanstack/react-query";
 import { router, Stack } from "expo-router";
 import { useState } from "react";
 import {
@@ -12,15 +13,19 @@ import {
   StyleSheet,
   Text,
 } from "react-native";
+import QuizCard from "./quiz-card";
 
 export default function QuizPage() {
-  const [numberOfQuizes, setNumberOfQuizes] = useState(10);
+  const [numberOfQuizes, setNumberOfQuizes] = useState(1);
   const [showLoadMore, setShowLoadMore] = useState(true);
-  const { quizzes, loading, error } = useQuizzes(numberOfQuizes);
+
+  const { data, isError, isPending } = useQuery(
+    createQuizQueryOptions(numberOfQuizes),
+  );
 
   const handleRedirect = (quiz: QuizData) => {
     router.push({
-      pathname: `/quizzes/[id]`,
+      pathname: `/quizzes/quiz-details`,
       params: {
         id: quiz.id,
         title: quiz.title,
@@ -32,18 +37,18 @@ export default function QuizPage() {
   };
 
   const loadMore = () => {
-    if (!quizzes?.data) return;
-    setNumberOfQuizes((prev) => prev + 10);
-    if (quizzes?.data.length % numberOfQuizes !== 0) setShowLoadMore(false);
+    if (!data?.data) return;
+    if (data?.data.length % numberOfQuizes !== 0) {
+      setShowLoadMore(false);
+      return;
+    }
+    setNumberOfQuizes((prev) => prev + 1);
   };
 
-  if (loading)
-    return <ActivityIndicator style={styles.container} size="large" />;
-
-  if (error)
+  if (isError)
     return (
       <ThemedView style={styles.container}>
-        <Text style={styles.errorText}>Something went wrong. {error}</Text>
+        <Text style={styles.errorText}>Something went wrong.</Text>
       </ThemedView>
     );
 
@@ -69,13 +74,17 @@ export default function QuizPage() {
           contentContainerStyle={styles.quizContainer}
           showsVerticalScrollIndicator={false}
         >
-          {quizzes?.data.map((quiz) => (
-            <Pressable onPress={() => handleRedirect(quiz)} key={quiz.id}>
-              <ThemedView style={styles.quiz}>
-                <ThemedText>{quiz.title}</ThemedText>
-              </ThemedView>
-            </Pressable>
-          ))}
+          {isPending ? (
+            <ActivityIndicator style={styles.container} size="large" />
+          ) : (
+            data.data.map((quiz) => (
+              <QuizCard
+                key={quiz.id}
+                quiz={quiz}
+                handleRedirect={() => handleRedirect(quiz)}
+              />
+            ))
+          )}
         </ScrollView>
         {showLoadMore && (
           <Pressable onPress={loadMore}>
@@ -101,17 +110,6 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     gap: 10,
     padding: 20,
-  },
-  quiz: {
-    padding: 10,
-    marginVertical: 5,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 10,
-    shadowColor: "black",
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 4,
-    elevation: 5,
-    borderWidth: 1,
   },
   errorText: {
     color: "red",

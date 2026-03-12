@@ -6,7 +6,7 @@ import { Pressable, StyleSheet } from "react-native";
 
 export default function Index() {
   const handlePress = () => {
-    router.push("/quizzes/quiz");
+    router.push("/quizzes/quiz-selector");
   };
   return (
     <ThemedView style={styles.container}>

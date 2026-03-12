@@ -7,7 +7,7 @@ export default function FinishScreen() {
   const { numberOfCorrectAnswers } = useLocalSearchParams();
 
   const handleRedirect = () => {
-    router.push("/quizzes/quiz");
+    router.push("/quizzes/quiz-selector");
   };
 
   return (

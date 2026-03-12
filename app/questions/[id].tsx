@@ -1,56 +1,37 @@
-import { fetchQuestions } from "@/api/quizApi";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { shuffleArray } from "@/helper-functions/shuffleArray";
-import { Answer, QuizQuestion } from "@/types/types";
+import createQuestionsQueryOptions from "@/queryOptions/createQuestionsQueryOptions";
+import { Answer } from "@/types/types";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import {
-	router,
-	Stack,
-	useLocalSearchParams,
-	useNavigation,
+  router,
+  Stack,
+  useLocalSearchParams,
+  useNavigation,
 } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-	ActivityIndicator,
-	Alert,
-	FlatList,
-	Modal,
-	Pressable,
-	StyleSheet,
-	Text,
-	View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 
 export default function QuizQuestions() {
   const { id, title, questionCount } = useLocalSearchParams();
   const navigation = useNavigation();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [questions, setQuestions] = useState<QuizQuestion[] | null>(null);
   const [selectedAnswerId, setSelectedAnswerId] = useState<string | null>(null);
   const [isExplanationVisible, setIsExplanationVisible] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [numberOfCorrectAnswers, setNumberOfCorrectAnswers] = useState(0);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await fetchQuestions(id.toString());
-        const shuffledQuestions = shuffleArray(data.data);
-        const fullyRandomizedQuiz = shuffledQuestions.map((question: any) => ({
-          ...question,
-          answers: shuffleArray(question.answers),
-        }));
-
-        setQuestions(fullyRandomizedQuiz);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [id, title]);
+  const { data, isError, isPending } = useSuspenseQuery(
+    createQuestionsQueryOptions(id.toString()),
+  );
 
   useEffect(() => {
     const unsubscribe = navigation.addListener("beforeRemove", (e) => {
@@ -101,28 +82,25 @@ export default function QuizQuestions() {
     });
   };
 
-  if (loading)
-    return <ActivityIndicator style={styles.container} size="large" />;
-
-  if (error)
+  if (isError)
     return (
       <ThemedView style={styles.container}>
-        <Text style={styles.errorText}>Something went wrong. {error}</Text>
+        <Text style={styles.errorText}>Something went wrong.</Text>
       </ThemedView>
     );
 
-  if (questions)
-    return (
-      <>
-        <Stack.Screen options={{ title: title as string }} />
+  return (
+    <>
+      <Stack.Screen options={{ title: title as string }} />
+      {!isPending ? (
         <ThemedView style={styles.container}>
           <ThemedText
             style={styles.text}
           >{`Question ${currentQuestionIndex + 1} / ${questionCount}`}</ThemedText>
-          <ThemedText>{questions[currentQuestionIndex].text}</ThemedText>
+          <ThemedText>{data[currentQuestionIndex].text}</ThemedText>
           <FlatList
             style={styles.list}
-            data={questions[currentQuestionIndex].answers}
+            data={data[currentQuestionIndex].answers}
             extraData={selectedAnswerId}
             numColumns={1}
             keyExtractor={(item) => item.id}
@@ -159,9 +137,6 @@ export default function QuizQuestions() {
           />
           {selectedAnswerId && (
             <>
-              {/* <ThemedText>
-                {questions[currentQuestionIndex].explanation}
-              </ThemedText> */}
               {currentQuestionIndex + 1 === Number(questionCount) ? (
                 <Pressable onPress={finish} style={styles.actionButton}>
                   <ThemedText style={styles.buttonText}>Finish</ThemedText>
@@ -171,45 +146,47 @@ export default function QuizQuestions() {
                   <ThemedText style={styles.buttonText}>Next</ThemedText>
                 </Pressable>
               )}
-              {selectedAnswerId &&
-                questions[currentQuestionIndex].explanation && (
-                  <Pressable
-                    style={styles.explanationButton}
-                    onPress={() => setIsExplanationVisible(true)}
-                  >
-                    <Text style={styles.explanationButtonText}>
-                      Show Explanation
-                    </Text>
-                  </Pressable>
-                )}
+              {selectedAnswerId && data[currentQuestionIndex].explanation && (
+                <Pressable
+                  style={styles.explanationButton}
+                  onPress={() => setIsExplanationVisible(true)}
+                >
+                  <Text style={styles.explanationButtonText}>
+                    Show Explanation
+                  </Text>
+                </Pressable>
+              )}
             </>
           )}
         </ThemedView>
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={isExplanationVisible}
-          onRequestClose={() => setIsExplanationVisible(false)} // Handles hardware back button on Android
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Explanation</Text>
+      ) : (
+        <ActivityIndicator style={styles.container} size="large" />
+      )}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isExplanationVisible}
+        onRequestClose={() => setIsExplanationVisible(false)} // Handles hardware back button on Android
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Explanation</Text>
 
-              <Text style={styles.modalText}>
-                {questions[currentQuestionIndex].explanation}
-              </Text>
+            <Text style={styles.modalText}>
+              {data[currentQuestionIndex].explanation}
+            </Text>
 
-              <Pressable
-                style={styles.closeButton}
-                onPress={() => setIsExplanationVisible(false)}
-              >
-                <Text style={styles.closeButtonText}>Close</Text>
-              </Pressable>
-            </View>
+            <Pressable
+              style={styles.closeButton}
+              onPress={() => setIsExplanationVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>Close</Text>
+            </Pressable>
           </View>
-        </Modal>
-      </>
-    );
+        </View>
+      </Modal>
+    </>
+  );
 }
 
 const styles = StyleSheet.create({
