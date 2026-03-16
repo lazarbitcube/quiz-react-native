@@ -9,7 +9,7 @@ import {
   useLocalSearchParams,
   useNavigation,
 } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -28,6 +28,7 @@ export default function QuizQuestions() {
   const [isExplanationVisible, setIsExplanationVisible] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [numberOfCorrectAnswers, setNumberOfCorrectAnswers] = useState(0);
+  const isFinishing = useRef(false);
 
   const { data, isError, isPending } = useSuspenseQuery(
     createQuestionsQueryOptions(id.toString()),
@@ -35,6 +36,9 @@ export default function QuizQuestions() {
 
   useEffect(() => {
     const unsubscribe = navigation.addListener("beforeRemove", (e) => {
+      if (isFinishing.current) {
+        return;
+      }
       e.preventDefault();
 
       Alert.alert(
@@ -74,8 +78,10 @@ export default function QuizQuestions() {
   };
 
   const finish = () => {
-    router.push({
-      pathname: `/questions/finish`,
+    isFinishing.current = true;
+
+    router.replace({
+      pathname: `/finish/finish`,
       params: {
         numberOfCorrectAnswers: numberOfCorrectAnswers,
       },

@@ -1,15 +1,14 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { IconSymbol } from "@/components/ui/icon-symbol";
 import { createQuizQueryOptions } from "@/queryOptions/createQuizQueryOptions";
 import { QuizData } from "@/types/types";
 import { useQuery } from "@tanstack/react-query";
-import { router, Stack } from "expo-router";
+import { router } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
+  FlatList,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
 } from "react-native";
@@ -28,10 +27,7 @@ export default function QuizPage() {
       pathname: `/quizzes/quiz-details`,
       params: {
         id: quiz.id,
-        title: quiz.title,
-        description: quiz.description,
-        difficulty: quiz.difficulty,
-        questionCount: quiz.questionCount,
+        numberOfQuizes: numberOfQuizes,
       },
     });
   };
@@ -53,48 +49,33 @@ export default function QuizPage() {
     );
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: "Quiz selector",
-          headerLeft: () => (
-            <Pressable
-              onPress={() => router.replace("/")}
-              style={{ padding: 8, marginRight: 20 }}
-            >
-              <IconSymbol name="arrow.backward" color="black" />
-            </Pressable>
-          ),
-        }}
-      />
-      <ThemedView style={styles.container}>
-        <Text style={styles.header}>Select a quiz</Text>
-        <ScrollView
+    <ThemedView style={styles.container}>
+      <Text style={styles.header}>Select a quiz</Text>
+      {isPending ? (
+        <ActivityIndicator style={styles.container} size="large" />
+      ) : (
+        <FlatList
           style={{ width: "100%" }}
-          contentContainerStyle={styles.quizContainer}
           showsVerticalScrollIndicator={false}
-        >
-          {isPending ? (
-            <ActivityIndicator style={styles.container} size="large" />
-          ) : (
-            data.data.map((quiz) => (
-              <QuizCard
-                key={quiz.id}
-                quiz={quiz}
-                handleRedirect={() => handleRedirect(quiz)}
-              />
-            ))
+          data={data.data}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <QuizCard
+              key={item.id}
+              quiz={item}
+              handleRedirect={() => handleRedirect(item)}
+            />
           )}
-        </ScrollView>
-        {showLoadMore && (
-          <Pressable onPress={loadMore}>
-            <ThemedView style={styles.loadMoreButton}>
-              <ThemedText>Load more</ThemedText>
-            </ThemedView>
-          </Pressable>
-        )}
-      </ThemedView>
-    </>
+        />
+      )}
+      {showLoadMore && (
+        <Pressable onPress={loadMore}>
+          <ThemedView style={styles.loadMoreButton}>
+            <ThemedText>Load more</ThemedText>
+          </ThemedView>
+        </Pressable>
+      )}
+    </ThemedView>
   );
 }
 

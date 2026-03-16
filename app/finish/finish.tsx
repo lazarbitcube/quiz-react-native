@@ -1,14 +1,34 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { router, Stack, useLocalSearchParams } from "expo-router";
+import {
+  router,
+  Stack,
+  useLocalSearchParams,
+  useNavigation,
+} from "expo-router";
+import { useEffect } from "react";
 import { Pressable, StyleSheet } from "react-native";
 
 export default function FinishScreen() {
   const { numberOfCorrectAnswers } = useLocalSearchParams();
 
   const handleRedirect = () => {
-    router.push("/quizzes/quiz-selector");
+    router.replace("/quizzes/quiz-selector");
   };
+
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("beforeRemove", (e) => {
+      if (e.data.action.type === "GO_BACK") {
+        e.preventDefault();
+
+        router.replace("/quizzes/quiz-selector");
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   return (
     <>

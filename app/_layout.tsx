@@ -12,10 +12,10 @@ import "react-native-reanimated";
 export const unstable_settings = {
   anchor: "(tabs)",
 };
+const queryClient = new QueryClient();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const queryClient = new QueryClient();
 
   return (
     <QueryClientProvider client={queryClient}>
